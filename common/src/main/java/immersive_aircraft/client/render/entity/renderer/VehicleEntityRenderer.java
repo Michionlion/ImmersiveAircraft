@@ -4,31 +4,61 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import immersive_aircraft.client.render.entity.renderer.utils.BBModelRenderer;
 import immersive_aircraft.client.render.entity.renderer.utils.ModelPartRenderHandler;
+import immersive_aircraft.client.render.entity.renderer.utils.SubmitCollectorBufferSource;
 import immersive_aircraft.entity.VehicleEntity;
 import immersive_aircraft.resources.BBModelLoader;
 import immersive_aircraft.resources.bbmodel.BBAnimationVariables;
 import immersive_aircraft.resources.bbmodel.BBModel;
 import immersive_aircraft.resources.bbmodel.BBObject;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.client.renderer.entity.state.EntityRenderState;
+import net.minecraft.client.renderer.state.CameraRenderState;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.AABB;
 import org.jetbrains.annotations.NotNull;
 
-public abstract class VehicleEntityRenderer<T extends VehicleEntity> extends EntityRenderer<T> {
+@SuppressWarnings("unchecked")
+public abstract class VehicleEntityRenderer<T extends VehicleEntity> extends EntityRenderer<T, VehicleEntityRenderer.VehicleRenderState> {
     public VehicleEntityRenderer(EntityRendererProvider.Context context) {
         super(context);
     }
 
     protected abstract ModelPartRenderHandler<T> getModel(T entity);
 
-    protected abstract ResourceLocation getModelId();
-
+    protected abstract Identifier getModelId();
 
     @Override
+    public VehicleRenderState createRenderState() {
+        return new VehicleRenderState();
+    }
+
+    @Override
+    public void extractRenderState(T entity, VehicleRenderState state, float tickDelta) {
+        super.extractRenderState(entity, state, tickDelta);
+        state.entity = entity;
+        state.tickDelta = tickDelta;
+    }
+
+    @Override
+    public void submit(VehicleRenderState state, PoseStack matrixStack, SubmitNodeCollector submitNodeCollector, CameraRenderState cameraRenderState) {
+        if (!(state.entity instanceof VehicleEntity vehicleEntity)) {
+            return;
+        }
+
+        T entity = (T) vehicleEntity;
+        float yaw = entity.getViewYRot(state.tickDelta);
+        SubmitCollectorBufferSource vertexConsumers = new SubmitCollectorBufferSource(submitNodeCollector, matrixStack);
+        render(entity, yaw, state.tickDelta, matrixStack, vertexConsumers, state.lightCoords);
+        vertexConsumers.flush();
+
+        super.submit(state, matrixStack, submitNodeCollector, cameraRenderState);
+    }
+
     public void render(T entity, float yaw, float tickDelta, PoseStack matrixStack, MultiBufferSource vertexConsumerProvider, int light) {
         PoseStack.Pose peek = matrixStack.last();
 
@@ -43,8 +73,6 @@ public abstract class VehicleEntityRenderer<T extends VehicleEntity> extends Ent
         renderLocal(entity, yaw, tickDelta, matrixStack, peek, vertexConsumerProvider, light);
 
         matrixStack.popPose();
-
-        super.render(entity, yaw, tickDelta, matrixStack, vertexConsumerProvider, light);
     }
 
     public void renderLocal(T entity, float yaw, float tickDelta, PoseStack matrixStack, PoseStack.Pose peek, MultiBufferSource vertexConsumerProvider, int light) {
@@ -98,11 +126,14 @@ public abstract class VehicleEntityRenderer<T extends VehicleEntity> extends Ent
         return 1.0;
     }
 
-    private static final ResourceLocation TEXTURE = ResourceLocation.parse("invalid");
+    private static final Identifier TEXTURE = Identifier.parse("invalid");
 
-    @Override
-    public ResourceLocation getTextureLocation(@NotNull T aircraft) {
+    public Identifier getTextureLocation(@NotNull T aircraft) {
         return TEXTURE;
     }
-}
 
+    public static class VehicleRenderState extends EntityRenderState {
+        public VehicleEntity entity;
+        public float tickDelta;
+    }
+}
