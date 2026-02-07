@@ -2,15 +2,11 @@ package immersive_aircraft.neoforge.cobalt.registration;
 
 import immersive_aircraft.cobalt.registration.Registration;
 import immersive_aircraft.neoforge.NeoForgeBusEvents;
-import net.minecraft.client.renderer.entity.EntityRendererProvider;
-import net.minecraft.client.renderer.entity.EntityRenderers;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.Item;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -37,11 +33,6 @@ public class RegistrationImpl extends Registration.Impl {
 
     private RegistryRepo getRepo(String namespace) {
         return repos.computeIfAbsent(namespace, RegistryRepo::new);
-    }
-
-    @Override
-    public <T extends Entity> void registerEntityRenderer(EntityType<T> type, EntityRendererProvider<T> constructor) {
-        EntityRenderers.register(type, constructor);
     }
 
     @Override

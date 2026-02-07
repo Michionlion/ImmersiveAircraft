@@ -4,6 +4,14 @@ architectury {
 
 loom {
     accessWidenerPath = file("src/main/resources/immersive_aircraft.accessWidener")
+    splitEnvironmentSourceSets()
+}
+
+sourceSets {
+    client {
+        compileClasspath += main.compileClasspath
+        runtimeClasspath += main.runtimeClasspath
+    }
 }
 
 dependencies {
@@ -35,4 +43,12 @@ publishing {
             from components.java
         }
     }
+}
+
+jar {
+    from(sourceSets.client.output)
+}
+
+sourcesJar {
+    from(sourceSets.client.allSource)
 }

@@ -4,6 +4,7 @@ import immersive_aircraft.ClientMain;
 import immersive_aircraft.Renderer;
 import immersive_aircraft.WeaponRendererRegistry;
 import immersive_aircraft.client.KeyBindings;
+import immersive_aircraft.cobalt.registration.ClientRegistration;
 import immersive_aircraft.item.upgrade.VehicleStat;
 import immersive_aircraft.item.upgrade.VehicleUpgrade;
 import immersive_aircraft.item.upgrade.VehicleUpgradeRegistry;
@@ -12,6 +13,7 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
@@ -32,6 +34,7 @@ public final class ClientFabric implements ClientModInitializer {
 
         ClientTickEvents.START_CLIENT_TICK.register(event -> ClientMain.tick());
 
+        ClientRegistration.setImpl(EntityRendererRegistry::register);
         Renderer.bootstrap();
         WeaponRendererRegistry.bootstrap();
 

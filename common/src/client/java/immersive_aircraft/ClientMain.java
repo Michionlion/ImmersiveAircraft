@@ -5,6 +5,7 @@ import immersive_aircraft.config.Config;
 import immersive_aircraft.entity.InventoryVehicleEntity;
 import immersive_aircraft.entity.VehicleEntity;
 import immersive_aircraft.network.ClientMessageHandler;
+import immersive_aircraft.util.FlowingText;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -29,6 +30,21 @@ public class ClientMain {
         Main.messageHandler = new ClientMessageHandler();
         Main.cameraGetter = () -> Minecraft.getInstance().gameRenderer.getMainCamera().position();
         Main.firstPersonGetter = () -> Minecraft.getInstance().options.getCameraType() == CameraType.FIRST_PERSON;
+        Main.keyStateGetter = key -> switch (key) {
+            case LEFT -> KeyBindings.left.isDown();
+            case RIGHT -> KeyBindings.right.isDown();
+            case UP -> KeyBindings.up.isDown();
+            case DOWN -> KeyBindings.down.isDown();
+            case FORWARD -> KeyBindings.forward.isDown();
+            case BACKWARD -> KeyBindings.backward.isDown();
+            case PUSH -> KeyBindings.push.isDown();
+            case PULL -> KeyBindings.pull.isDown();
+        };
+        Main.keyNameGetter = key -> switch (key) {
+            case BOOST -> KeyBindings.boost.getTranslatedKeyMessage();
+            case DISMOUNT -> KeyBindings.dismount.getTranslatedKeyMessage();
+        };
+        Main.textWrapper = FlowingText::wrap;
         Main.debouncingGetter = key -> {
             if (key == Main.Key.BOOST) {
                 return consumeClick(KeyBindings.boost);
