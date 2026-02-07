@@ -126,6 +126,10 @@
   "immersive_aircraft.tooltip.no_target": "Needs to be assembled on the floor!",
   "immersive_aircraft.tooltip.no_space": "Not enough space!",
 
+  "tag.item.immersive_aircraft.aircraft": "Aircraft",
+  "tag.item.immersive_aircraft.weapons": "Aircraft Weapons",
+  "tag.item.immersive_aircraft.upgrades": "Aircraft Upgrades",
+
   "immersive_aircraft.slot.booster": "Boost rockets",
   "immersive_aircraft.slot.weapon": "Weapon slot",
   "immersive_aircraft.slot.boiler": "Fuel slot",
