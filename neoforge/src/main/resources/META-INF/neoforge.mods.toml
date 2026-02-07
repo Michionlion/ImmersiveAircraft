@@ -26,6 +26,6 @@ side = "BOTH"
 [[dependencies.immersive_aircraft]]
 modId = "neoforge"
 type = "required"
-versionRange = "[${neoforge_version},)"
+versionRange = "[${neoforge_min_version},)"
 ordering = "NONE"
 side = "BOTH"
