@@ -29,9 +29,12 @@ dependencies {
     forgeRuntimeLibrary 'org.mariuszgromada.math:MathParser.org-mXparser:5.2.1'
     include 'org.mariuszgromada.math:MathParser.org-mXparser:5.2.1'
 
-    modCompileOnlyApi("mezz.jei:jei-${minecraft_version}-forge-api:${jei_version}")
+    modCompileOnlyApi("mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}")
 
-    modRuntimeOnly "me.shedaniel:RoughlyEnoughItems-api-neoforge:$rei_version"
+    // Optional in production, but useful in dev for validating JEI plugin loading.
+    modRuntimeOnly "mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}"
+
+    modRuntimeOnly "me.shedaniel:RoughlyEnoughItems-neoforge:$rei_version"
 
     common(project(path: ":common", configuration: "namedElements")) { transitive false }
     shadowCommon(project(path: ":common", configuration: "transformProductionNeoForge")) { transitive false }
@@ -41,9 +44,11 @@ processResources {
     inputs.property "version", project.version
 
     filesMatching("META-INF/neoforge.mods.toml") {
+        def neoforgeMajor = rootProject.neoforge_version.tokenize(".")[0]
         expand "version": project.version,
-                loader_major: "1",
-                minecraft_version: rootProject.architectury.minecraft
+                minecraft_version: rootProject.architectury.minecraft,
+                neoforge_version: rootProject.neoforge_version,
+                neoforge_major: neoforgeMajor
     }
 }
 
