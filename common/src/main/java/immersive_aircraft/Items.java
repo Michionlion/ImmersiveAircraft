@@ -7,6 +7,9 @@ import immersive_aircraft.item.AircraftItem;
 import immersive_aircraft.item.DyeableAircraftItem;
 import immersive_aircraft.item.WeaponItem;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
@@ -16,6 +19,7 @@ import java.util.function.Supplier;
 
 public interface Items {
     List<Supplier<Item>> items = new LinkedList<>();
+    ThreadLocal<ResourceKey<Item>> ITEM_ID_CONTEXT = new ThreadLocal<>();
 
     Supplier<Item> HULL = register("hull", () -> new Item(baseProps().stacksTo(8)));
     Supplier<Item> ENGINE = register("engine", () -> new Item(baseProps().stacksTo(8)));
@@ -49,16 +53,24 @@ public interface Items {
     Supplier<Item> IMPROVED_LANDING_GEAR = register("improved_landing_gear", () -> new Item(baseProps().stacksTo(8)));
 
     static Supplier<Item> register(String name, Supplier<Item> item) {
-        Supplier<Item> register = Registration.register(BuiltInRegistries.ITEM, Main.locate(name), item);
-        items.add(register);
-        return register;
+        Identifier id = Main.locate(name);
+        ITEM_ID_CONTEXT.set(ResourceKey.create(Registries.ITEM, id));
+        try {
+            Supplier<Item> register = Registration.register(BuiltInRegistries.ITEM, id, item);
+            items.add(register);
+            return register;
+        } finally {
+            ITEM_ID_CONTEXT.remove();
+        }
     }
 
     static void bootstrap() {
     }
 
     static Item.Properties baseProps() {
-        return new Item.Properties();
+        Item.Properties properties = new Item.Properties();
+        ResourceKey<Item> key = ITEM_ID_CONTEXT.get();
+        return key == null ? properties : properties.setId(key);
     }
 
     static List<ItemStack> getSortedItems() {

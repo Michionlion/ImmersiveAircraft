@@ -8,8 +8,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.player.Player;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Item;
 
 import java.util.HashMap;
@@ -34,8 +33,9 @@ public class VehicleUpgradesMessage extends Message {
 
         int upgradeCount = buffer.readInt();
         for (int i = 0; i < upgradeCount; i++) {
-            Item item = BuiltInRegistries.ITEM.get(buffer.readResourceLocation());
-            upgrades.put(item, readUpgrade(buffer));
+            Identifier identifier = buffer.readIdentifier();
+            VehicleUpgrade upgrade = readUpgrade(buffer);
+            BuiltInRegistries.ITEM.getOptional(identifier).ifPresent(item -> upgrades.put(item, upgrade));
         }
     }
 
@@ -45,7 +45,7 @@ public class VehicleUpgradesMessage extends Message {
         buffer.writeInt(upgrades.size()); // Write upgrade entry count.
 
         for (Item item : upgrades.keySet()) {
-            buffer.writeResourceLocation(BuiltInRegistries.ITEM.getKey(item));
+            buffer.writeIdentifier(BuiltInRegistries.ITEM.getKey(item));
             writeUpgrade(buffer, upgrades.get(item));
         }
     }

@@ -20,14 +20,14 @@ import immersive_aircraft.network.s2c.OpenGuiRequest;
 import immersive_aircraft.screen.VehicleScreenHandler;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.*;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.HasCustomInventoryScreen;
 import net.minecraft.world.entity.SlotAccess;
+import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -36,6 +36,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.Fireworks;
 import net.minecraft.world.item.component.ItemContainerContents;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -129,7 +131,9 @@ public abstract class InventoryVehicleEntity extends DyeableVehicleEntity implem
             if (isCargo && Config.getInstance().dropInventory || !isCargo && Config.getInstance().dropUpgrades) {
                 ItemStack stack = getSlot(slot.index()).get();
                 if (!stack.isEmpty()) {
-                    this.spawnAtLocation(stack.copyAndClear());
+                    if (level() instanceof ServerLevel serverLevel) {
+                        spawnAtLocation(serverLevel, stack.copyAndClear());
+                    }
                 }
             }
         }
@@ -155,7 +159,7 @@ public abstract class InventoryVehicleEntity extends DyeableVehicleEntity implem
     @Override
     public InteractionResult interact(Player player, InteractionHand hand) {
         if (getHealth() >= 1.0) {
-            if (!player.level().isClientSide && player.isSecondaryUseActive() && !isPassengerOfSameVehicle(player)) {
+            if (!player.level().isClientSide() && player.isSecondaryUseActive() && !isPassengerOfSameVehicle(player)) {
                 Entity primaryPassenger = getFirstPassenger();
                 if (primaryPassenger != null) {
                     // Kick out the first passenger
@@ -174,18 +178,19 @@ public abstract class InventoryVehicleEntity extends DyeableVehicleEntity implem
     }
 
     @Override
-    protected void addAdditionalSaveData(@NotNull CompoundTag tag) {
+    protected void addAdditionalSaveData(@NotNull ValueOutput tag) {
         super.addAdditionalSaveData(tag);
 
-        tag.put("Inventory", getInventory().createTag(this.registryAccess()));
+        ValueOutput inventoryData = tag.child("Inventory");
+        ContainerHelper.saveAllItems(inventoryData, getInventory().getItems());
     }
 
     @Override
-    protected void readAdditionalSaveData(@NotNull CompoundTag tag) {
+    protected void readAdditionalSaveData(@NotNull ValueInput tag) {
         super.readAdditionalSaveData(tag);
 
-        ListTag nbtList = tag.getList("Inventory", 10);
-        getInventory().fromTag(nbtList, this.registryAccess());
+        getInventory().clearContent();
+        ContainerHelper.loadAllItems(tag.childOrEmpty("Inventory"), getInventory().getItems());
     }
 
     @Override
@@ -321,7 +326,7 @@ public abstract class InventoryVehicleEntity extends DyeableVehicleEntity implem
 
     @Override
     public SlotAccess getSlot(int slot) {
-        return SlotAccess.forContainer(getInventory(), slot);
+        return SlotAccess.forListElement(getInventory().getItems(), slot);
     }
 
     public Map<Integer, List<Weapon>> getWeapons() {

@@ -2,8 +2,6 @@ package immersive_aircraft.entity;
 
 import com.google.common.collect.Lists;
 import com.mojang.math.Axis;
-import earth.terrarium.adastra.api.systems.GravityApi;
-import immersive_aircraft.CompatUtil;
 import immersive_aircraft.Main;
 import immersive_aircraft.Sounds;
 import immersive_aircraft.client.KeyBindings;
@@ -17,20 +15,19 @@ import immersive_aircraft.network.c2s.CollisionMessage;
 import immersive_aircraft.network.c2s.CommandMessage;
 import immersive_aircraft.resources.bbmodel.BBAnimationVariables;
 import immersive_aircraft.util.InterpolatedFloat;
-import net.minecraft.BlockUtil;
+import net.minecraft.util.BlockUtil;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.FluidTags;
@@ -40,14 +37,17 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.animal.Animal;
-import net.minecraft.world.entity.animal.WaterAnimal;
+import net.minecraft.world.entity.animal.fish.WaterAnimal;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.vehicle.DismountHelper;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.level.GameRules;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.gamerules.GameRules;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.phys.AABB;
@@ -66,7 +66,7 @@ import java.util.List;
  * Abstract vehicle, which handles player input, collisions, passengers and destruction
  */
 public abstract class VehicleEntity extends Entity {
-    public final ResourceLocation identifier;
+    public final Identifier identifier;
 
     private static final EntityDataAccessor<Float> DATA_HEALTH = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.FLOAT);
 
@@ -199,11 +199,11 @@ public abstract class VehicleEntity extends Entity {
     }
 
     public static boolean canCollide(Entity entity, Entity other) {
-        return (other.canBeCollidedWith() || other.isPushable()) && !entity.isPassengerOfSameVehicle(other);
+        return (other.canBeCollidedWith(entity) || other.isPushable()) && !entity.isPassengerOfSameVehicle(other);
     }
 
     @Override
-    public boolean canBeCollidedWith() {
+    public boolean canBeCollidedWith(@NotNull Entity ignored) {
         return true;
     }
 
@@ -218,13 +218,9 @@ public abstract class VehicleEntity extends Entity {
     }
 
     @Override
-    public boolean hurt(@NotNull DamageSource source, float amount) {
-        if (isInvulnerableTo(source)) {
+    public boolean hurtServer(ServerLevel serverLevel, @NotNull DamageSource source, float amount) {
+        if (isInvulnerableToBase(source)) {
             return false;
-        }
-
-        if (level().isClientSide || isRemoved()) {
-            return true;
         }
 
         // Creative player
@@ -278,7 +274,9 @@ public abstract class VehicleEntity extends Entity {
             }
 
             // Drop stuff if enabled
-            if (level().getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS) && Config.getInstance().enableDropsForNonPlayer) {
+            if (level() instanceof ServerLevel serverLevel
+                    && serverLevel.getGameRules().get(GameRules.ENTITY_DROPS)
+                    && Config.getInstance().enableDropsForNonPlayer) {
                 dropInventory();
                 drop();
             }
@@ -300,7 +298,9 @@ public abstract class VehicleEntity extends Entity {
         if (Config.getInstance().dropAircraft) {
             ItemStack stack = new ItemStack(asItem());
             addItemTag(stack);
-            spawnAtLocation(stack);
+            if (level() instanceof ServerLevel serverLevel) {
+                spawnAtLocation(serverLevel, stack);
+            }
         }
     }
 
@@ -309,7 +309,7 @@ public abstract class VehicleEntity extends Entity {
     }
 
     @Override
-    public void onAboveBubbleCol(boolean drag) {
+    public void onAboveBubbleColumn(boolean drag, BlockPos pos) {
         level().addParticle(ParticleTypes.SPLASH, getX() + (double) random.nextFloat(), getY() + 0.7, getZ() + (double) random.nextFloat(), 0.0, 0.0, 0.0);
         if (random.nextInt(20) == 0) {
             level().playLocalSound(getX(), getY(), getZ(), getSwimSplashSound(), getSoundSource(), 1.0f, 0.8f + 0.4f * random.nextFloat(), false);
@@ -334,13 +334,13 @@ public abstract class VehicleEntity extends Entity {
     }
 
     @Override
-    public void lerpTo(double x, double y, double z, float yaw, float pitch, int steps) {
+    protected void lerpPositionAndRotationStep(int steps, double x, double y, double z, double yaw, double pitch) {
         this.x = x;
         this.y = y;
         this.z = z;
         serverYRot = yaw;
         serverXRot = pitch;
-        this.interpolationSteps = 10;
+        this.interpolationSteps = steps;
     }
 
     private static float getMovementMultiplier(boolean positive, boolean negative) {
@@ -396,7 +396,7 @@ public abstract class VehicleEntity extends Entity {
         }
 
         // if it's the right side, update the velocity
-        if (isControlledByLocalInstance()) {
+        if (isLocalInstanceAuthoritative()) {
             updateVelocity();
 
             // boost
@@ -409,12 +409,12 @@ public abstract class VehicleEntity extends Entity {
             move(MoverType.SELF, getDeltaMovement());
         }
 
-        checkInsideBlocks();
+        applyEffectsFromBlocks();
 
         // auto enter
         List<Entity> list = level().getEntities(this, getBoundingBox().inflate(0.2f, -0.01f, 0.2f), EntitySelector.pushableBy(this));
         if (!list.isEmpty()) {
-            boolean bl = !level().isClientSide && !(getControllingPassenger() instanceof Player);
+            boolean bl = !level().isClientSide() && !(getControllingPassenger() instanceof Player);
             for (Entity entity : list) {
                 if (entity.hasPassenger(this)) continue;
                 if (bl && getPassengers().size() < (getPassengerSpace() - 1) && !entity.isPassenger() && entity.getBbWidth() < getBbWidth() && entity instanceof LivingEntity && !(entity instanceof WaterAnimal) && !(entity instanceof Player)) {
@@ -424,7 +424,7 @@ public abstract class VehicleEntity extends Entity {
         }
 
         // interpolate keys for visual feedback
-        if (isControlledByLocalInstance()) {
+        if (isLocalInstanceAuthoritative()) {
             pressingInterpolatedX.update(movementX);
             pressingInterpolatedY.update(movementY);
             pressingInterpolatedZ.update(movementZ);
@@ -433,7 +433,7 @@ public abstract class VehicleEntity extends Entity {
         tickDamageParticles();
 
         // Automatic regeneration if requested
-        if (!level().isClientSide) {
+        if (!level().isClientSide()) {
             int t = Config.getInstance().regenerateHealthEveryNTicks;
             if (t > 0 && level().getGameTime() % t == 0) {
                 repair(0.05f / getDurability());
@@ -442,7 +442,7 @@ public abstract class VehicleEntity extends Entity {
     }
 
     private void tickDamageParticles() {
-        if (level().isClientSide && random.nextFloat() > getHealth()) {
+        if (level().isClientSide() && random.nextFloat() > getHealth()) {
             // Damage particles
             List<AABB> shapes = getShapes();
             AABB shape = shapes.get(random.nextInt(shapes.size()));
@@ -518,7 +518,7 @@ public abstract class VehicleEntity extends Entity {
     }
 
     private void handleClientSync() {
-        if (isControlledByLocalInstance()) {
+        if (isLocalInstanceAuthoritative()) {
             interpolationSteps = 0;
             syncPacketPositionCodec(getX(), getY(), getZ());
         }
@@ -542,7 +542,7 @@ public abstract class VehicleEntity extends Entity {
 
     @Override
     protected double getDefaultGravity() {
-        return 0.04f * (CompatUtil.isModLoaded("ad_astra") ? GravityApi.API.getGravity(level(), BlockPos.containing(getEyePosition())) : 1);
+        return 0.04f;
     }
 
     protected abstract void updateController();
@@ -650,15 +650,13 @@ public abstract class VehicleEntity extends Entity {
     }
 
     @Override
-    protected void addAdditionalSaveData(@NotNull CompoundTag tag) {
+    protected void addAdditionalSaveData(@NotNull ValueOutput tag) {
         tag.putFloat("VehicleHealth", getHealth());
     }
 
     @Override
-    protected void readAdditionalSaveData(@NotNull CompoundTag tag) {
-        if (tag.contains("VehicleHealth")) {
-            setHealth(tag.getFloat("VehicleHealth"));
-        }
+    protected void readAdditionalSaveData(@NotNull ValueInput tag) {
+        setHealth(tag.getFloatOr("VehicleHealth", getHealth()));
     }
 
     public void addItemTag(ItemStack stack) {
@@ -678,7 +676,7 @@ public abstract class VehicleEntity extends Entity {
     @Override
     public InteractionResult interact(@NotNull Player player, @NotNull InteractionHand hand) {
         if (getHealth() < 1.0f && (player.isShiftKeyDown() || !Config.getInstance().requireShiftForRepair) && !hasPassenger(player)) {
-            if (!level().isClientSide) {
+            if (!level().isClientSide()) {
                 player.causeFoodExhaustion(Config.getInstance().repairExhaustion);
                 repair(Config.getInstance().repairSpeed);
 
@@ -716,7 +714,7 @@ public abstract class VehicleEntity extends Entity {
         if (player.isSecondaryUseActive()) {
             return InteractionResult.PASS;
         }
-        if (!level().isClientSide) {
+        if (!level().isClientSide()) {
             return player.startRiding(this) ? InteractionResult.CONSUME : InteractionResult.PASS;
         }
         if (hasPassenger(player)) {
@@ -731,7 +729,7 @@ public abstract class VehicleEntity extends Entity {
         super.move(movementType, movement);
 
         // Collision damage
-        if ((verticalCollision || horizontalCollision) && level().isClientSide && Config.getInstance().collisionDamage) {
+        if ((verticalCollision || horizontalCollision) && level().isClientSide() && Config.getInstance().collisionDamage) {
             double maxPossibleError = movement.length();
             double error = prediction.distanceTo(position());
             if (error <= maxPossibleError) {
@@ -902,7 +900,7 @@ public abstract class VehicleEntity extends Entity {
     }
 
     public boolean isValidDimension() {
-        return Config.getInstance().validDimensions.getOrDefault(this.level().dimension().location().toString(), true);
+        return Config.getInstance().validDimensions.getOrDefault(this.level().dimension().identifier().toString(), true);
     }
 
     protected AABB getOffsetBoundingBox(BoundingBoxDescriptor descriptor) {
@@ -938,9 +936,8 @@ public abstract class VehicleEntity extends Entity {
         return 0.0;
     }
 
-    @Override
     public AABB getBoundingBoxForCulling() {
-        AABB box = super.getBoundingBoxForCulling();
+        AABB box = getBoundingBox();
         for (AABB additionalShape : getAdditionalShapes()) {
             box = box.minmax(additionalShape);
         }

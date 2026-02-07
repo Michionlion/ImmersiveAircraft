@@ -5,10 +5,13 @@ import immersive_aircraft.neoforge.NeoForgeBusEvents;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.EntityRenderers;
 import net.minecraft.core.Registry;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.item.Item;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
@@ -42,24 +45,36 @@ public class RegistrationImpl extends Registration.Impl {
     }
 
     @Override
-    public void registerDataLoader(ResourceLocation id, PreparableReloadListener loader) {
-        dataLoaderRegister.dataLoaders.add(loader);
+    public void registerDataLoader(Identifier id, PreparableReloadListener loader) {
+        dataLoaderRegister.add(id, loader);
     }
 
     @Override
-    public void registerResourceLoader(ResourceLocation id, PreparableReloadListener loader) {
-        resourceLoaderRegister.dataLoaders.add(loader);
+    public void registerResourceLoader(Identifier id, PreparableReloadListener loader) {
+        resourceLoaderRegister.add(id, loader);
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     @Override
-    public <T> Supplier<T> register(Registry<? super T> registry, ResourceLocation id, Supplier<T> obj) {
+    public <T> Supplier<T> register(Registry<? super T> registry, Identifier id, Supplier<T> obj) {
         DeferredRegister reg = getRepo(id.getNamespace()).get(registry);
-        return reg.register(id.getPath(), obj);
+        Supplier<T> wrapped = obj;
+        if (registry.key().equals(Registries.ITEM)) {
+            ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, id);
+            wrapped = () -> {
+                immersive_aircraft.Items.ITEM_ID_CONTEXT.set(itemKey);
+                try {
+                    return obj.get();
+                } finally {
+                    immersive_aircraft.Items.ITEM_ID_CONTEXT.remove();
+                }
+            };
+        }
+        return reg.register(id.getPath(), wrapped);
     }
 
     class RegistryRepo {
-        private final Map<ResourceLocation, DeferredRegister<?>> registries = new HashMap<>();
+        private final Map<Identifier, DeferredRegister<?>> registries = new HashMap<>();
 
         private final String namespace;
 
@@ -69,7 +84,7 @@ public class RegistrationImpl extends Registration.Impl {
 
         @SuppressWarnings({"rawtypes"})
         public <T> DeferredRegister get(Registry<? super T> registry) {
-            ResourceLocation id = registry.key().location();
+            Identifier id = registry.key().identifier();
             if (!registries.containsKey(id)) {
                 DeferredRegister def = DeferredRegister.create(registry, namespace);
 
@@ -84,9 +99,17 @@ public class RegistrationImpl extends Registration.Impl {
 
     public static class DataLoaderRegister {
         // Doing no setter means only the RegistrationImpl class can get access to registering more loaders.
-        private final List<PreparableReloadListener> dataLoaders = new ArrayList<>();
+        private final Map<Identifier, PreparableReloadListener> dataLoaders = new LinkedHashMap<>();
+
+        private void add(Identifier id, PreparableReloadListener loader) {
+            dataLoaders.put(id, loader);
+        }
 
         public List<PreparableReloadListener> getLoaders() {
+            return new ArrayList<>(dataLoaders.values());
+        }
+
+        public Map<Identifier, PreparableReloadListener> getLoaderMap() {
             return dataLoaders;
         }
     }
