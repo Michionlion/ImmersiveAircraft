@@ -1,3 +1,8 @@
+# 1.4.3
+
+* Updated example datapack
+* Added 1.21.11 support
+
 # 1.4.2
 
 * Synced translations
@@ -48,10 +53,10 @@
 * Fixed some crashes
 * Fixed health bar position conflicts on Forge (thanks sfiomn!)
 * Added config flags
-    * `dropAircraft` to make aircraft non-pickup-able
-    * `rotaryCannonDamage`
-    * `heavyCrossBowVelocity`
-    * `bombBayEntity` A mapping from ammo item to spawned entity
+  * `dropAircraft` to make aircraft non-pickup-able
+  * `rotaryCannonDamage`
+  * `heavyCrossBowVelocity`
+  * `bombBayEntity` A mapping from ammo item to spawned entity
 
 # 1.1.8
 
@@ -91,16 +96,16 @@
 * Arrows shot by the heavy crossbow are no longer picked up by the player as this caused duplication
 * Anvil names are now treated properly (thanks Cibernet!)
 * Added colorable aircraft (thanks Cibernet!)
-    * Mostly interesting for addons with models designed for it
-    * Added support for Airship, Cargo Airship, and the Warship
-    * Coloring works like leather (combine with dye in crafting, clear with cauldron)
+  * Mostly interesting for addons with models designed for it
+  * Added support for Airship, Cargo Airship, and the Warship
+  * Coloring works like leather (combine with dye in crafting, clear with cauldron)
 * Placing a vehicle invalidly now prints an error message
 * Fixed banners sometimes not rendered correctly
 * Added compat with Destroy
 * Added Ad Astra Compat (Thanks Erdragh!)
 * You can now turn on vehicle health generation in the config (`regenerateHealthEveryNTicks`)
-    * This brings it closer to the vanilla boat mechanic while still having health rather than "wobbliness"
-    * With the second new flag `requireShiftForRepair` you can also require shift to repair the vehicle
+  * This brings it closer to the vanilla boat mechanic while still having health rather than "wobbliness"
+  * With the second new flag `requireShiftForRepair` you can also require shift to repair the vehicle
 * Added configurable `repairExhaustion` (small hunger cost for repairing)
 * You can now destroy aircraft much quicker with your hand, when they are empty
 
@@ -119,14 +124,14 @@
 
 * Added the Warship (thanks Maugwei!)
 * Changes to core, keep addons up to date!
-    * Made many changes to allow easier addons
+  * Made many changes to allow easier addons
 * Vehicles now implement inventory interface, thus working with hoppers etc
 * Rockets now boost based on duration
 * You no longer yeet yourself out of the aircraft when sneak-right clicking
 * No more mining slowdown while in aircraft
 * Added config flags to:
-    * Drop the inventory (default true to stay faithful to e.g., boats)
-    * Drop the equipment/customization (default false, as that's just annoying)
+  * Drop the inventory (default true to stay faithful to e.g., boats)
+  * Drop the equipment/customization (default false, as that's just annoying)
 
 # 0.7.5
 
@@ -169,12 +174,12 @@
 # 0.7.0
 
 * Aircraft now have a health bar, building up visual damage until they explode
-    * Right click fixes it again
+  * Right click fixes it again
 * Added 4 weapon/utilities
-    * Telescope – Twice the zoom as a spyglass and always available
-    * Heavy Crossbow – Shots arrows with a lot of force
-    * Rotary Cannon – Automatic cannon on a gyroscopic mount
-    * Bomb Bay – Drops tiny TNT packets (no block destruction)
+  * Telescope – Twice the zoom as a spyglass and always available
+  * Heavy Crossbow – Shots arrows with a lot of force
+  * Rotary Cannon – Automatic cannon on a gyroscopic mount
+  * Bomb Bay – Drops tiny TNT packets (no block destruction)
 * Reorders slots to no longer burn your banners (Existing aircraft needs some manual fixing)
 * Added support for modded fuel (Thanks Brandon!)
 * Biplanes can now reverse
@@ -200,7 +205,7 @@
 * Added datapack support for custom upgrades
 * Configurable vehicle explosions
 * Removed Multi-Keybindings as it no longer works with Forge anyways
-    * Also removed separate keybinds for pull and push
+  * Also removed separate keybinds for pull and push
 * Added config to block aircraft in certain dimensions
 * Added JEI support for the larger inventories
 
@@ -231,7 +236,7 @@
 * Added a configurable fuel map
 * Cut default wind sensibility in half
 * Changed back to custom Keybindings, allowing to reuse keys without conflicts
-    * A config flag exists to disable this in case of mod conflicts
+  * A config flag exists to disable this in case of mod conflicts
 
 # 0.4.1
 
@@ -243,14 +248,14 @@
 
 * Added inventory
 * Added fuel
-    * The Gyrodyne burns your body fat instead
+  * The Gyrodyne burns your body fat instead
 * Added 9 unique upgrade items
 * Added banners to enhance the look of the Airplane and Airship
 * Added dye slots to tint the Airships sails
 * Added rocket boost
 * Improved wind mechanics, configurable
 * Crashing aircraft now destroys them, configurable
-    * By default, only player can destroy aircraft to avoid a rogue skeleton throwing your stuff on the floor
+  * By default, only player can destroy aircraft to avoid a rogue skeleton throwing your stuff on the floor
 
 # 0.3.1
 
