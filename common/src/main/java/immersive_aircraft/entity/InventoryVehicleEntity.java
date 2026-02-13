@@ -1,9 +1,9 @@
 package immersive_aircraft.entity;
 
+import com.mojang.datafixers.util.Pair;
 import immersive_aircraft.WeaponRegistry;
 import immersive_aircraft.cobalt.network.NetworkHandler;
 import immersive_aircraft.config.Config;
-import immersive_aircraft.data.VehicleDataLoader;
 import immersive_aircraft.entity.inventory.SparseSimpleInventory;
 import immersive_aircraft.entity.inventory.VehicleInventoryDescription;
 import immersive_aircraft.entity.inventory.slots.SlotDescription;
@@ -27,7 +27,6 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.HasCustomInventoryScreen;
 import net.minecraft.world.entity.SlotAccess;
-import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -181,16 +180,18 @@ public abstract class InventoryVehicleEntity extends DyeableVehicleEntity implem
     protected void addAdditionalSaveData(@NotNull ValueOutput tag) {
         super.addAdditionalSaveData(tag);
 
-        ValueOutput inventoryData = tag.child("Inventory");
-        ContainerHelper.saveAllItems(inventoryData, getInventory().getItems());
+        ValueOutput.TypedOutputList<Pair<Integer, ItemStack>> list = tag.list("Inventory",
+                SparseSimpleInventory.INDEXED_ITEM_CODEC);
+        getInventory().storeAsIndexedItemList(list);
     }
 
     @Override
     protected void readAdditionalSaveData(@NotNull ValueInput tag) {
         super.readAdditionalSaveData(tag);
 
-        getInventory().clearContent();
-        ContainerHelper.loadAllItems(tag.childOrEmpty("Inventory"), getInventory().getItems());
+        ValueInput.TypedInputList<Pair<Integer, ItemStack>> list = tag.listOrEmpty("Inventory",
+                SparseSimpleInventory.INDEXED_ITEM_CODEC);
+        getInventory().fromIndexedItemList(list);
     }
 
     @Override

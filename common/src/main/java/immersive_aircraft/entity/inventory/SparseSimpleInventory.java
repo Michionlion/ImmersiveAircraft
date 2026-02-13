@@ -1,6 +1,7 @@
 package immersive_aircraft.entity.inventory;
 
-import immersive_aircraft.Main;
+import com.mojang.datafixers.util.Pair;
+import com.mojang.serialization.Codec;
 import immersive_aircraft.cobalt.network.NetworkHandler;
 import immersive_aircraft.entity.InventoryVehicleEntity;
 import immersive_aircraft.network.c2s.InventoryRequest;
@@ -8,13 +9,17 @@ import immersive_aircraft.network.s2c.InventoryUpdateMessage;
 import immersive_aircraft.screen.VehicleScreenHandler;
 import net.minecraft.core.NonNullList;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 
 public class SparseSimpleInventory extends SimpleContainer {
+    public static final Codec<Pair<Integer, ItemStack>> INDEXED_ITEM_CODEC = Codec.mapPair(
+            Codec.INT.fieldOf("Slot"),
+            ItemStack.CODEC.fieldOf("Item")
+    ).codec();
+
     private final NonNullList<ItemStack> tracked;
     private boolean inventoryRequested = false;
 
@@ -24,13 +29,28 @@ public class SparseSimpleInventory extends SimpleContainer {
         tracked = NonNullList.withSize(size, ItemStack.EMPTY);
     }
 
-    public void load(ValueInput data) {
+    public void fromIndexedItemList(ValueInput.TypedInputList<Pair<Integer, ItemStack>> typedInputList) {
         clearContent();
-        ContainerHelper.loadAllItems(data, getItems());
+        for (int i = 0; i < this.getContainerSize(); i++) {
+            this.tracked.set(i, ItemStack.EMPTY);
+        }
+
+        typedInputList.stream().forEach(pair -> {
+            int index = pair.getFirst();
+            if (index >= 0 && index < this.getContainerSize()) {
+                this.setItem(index, pair.getSecond());
+                this.tracked.set(index, pair.getSecond().copy());
+            }
+        });
     }
 
-    public void save(ValueOutput data) {
-        ContainerHelper.saveAllItems(data, getItems());
+    public void storeAsIndexedItemList(ValueOutput.TypedOutputList<Pair<Integer, ItemStack>> typedOutputList) {
+        for (int i = 0; i < this.getContainerSize(); i++) {
+            ItemStack stack = this.getItem(i);
+            if (!stack.isEmpty()) {
+                typedOutputList.add(Pair.of(i, stack.copy()));
+            }
+        }
     }
 
     public void tick(InventoryVehicleEntity entity) {
@@ -43,8 +63,8 @@ public class SparseSimpleInventory extends SimpleContainer {
         } else {
             // Sync changed slots (excluding trailing inventory slots since they won't affect behavior)
             int lastSyncIndex = entity.getInventoryDescription().getLastSyncIndex();
-            if (lastSyncIndex == 0) return;
-            int index = entity.tickCount % lastSyncIndex;
+            if (lastSyncIndex < 0) return;
+            int index = entity.tickCount % (lastSyncIndex + 1);
             ItemStack stack = getItem(index);
             ItemStack trackedStack = tracked.get(index);
             if (!ItemStack.isSameItem(stack, trackedStack)) {
