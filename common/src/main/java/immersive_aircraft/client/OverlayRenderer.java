@@ -9,6 +9,7 @@ import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.ARGB;
 
@@ -78,12 +79,12 @@ public class OverlayRenderer {
         for (int i = 0; i < maxHearts; i++) {
             int u = 52;
             int x = ox - i * 8 - 9;
-            context.blit(ICONS_TEX, x, y, u, 9, 9, 9, 64, 64);
+            context.blit(RenderPipelines.GUI_TEXTURED, ICONS_TEX, x, y, u, 9, 9, 9, 64, 64);
             if (i * 2 + 1 < health) {
-                context.blit(ICONS_TEX, x, y, 0, 0, 9, 9, 64, 64);
+                context.blit(RenderPipelines.GUI_TEXTURED, ICONS_TEX, x, y, 0, 0, 9, 9, 64, 64);
             }
             if (i * 2 + 1 != health) continue;
-            context.blit(ICONS_TEX, x, y, 10, 0, 9, 9, 64, 64);
+            context.blit(RenderPipelines.GUI_TEXTURED, ICONS_TEX, x, y, 10, 0, 9, 9, 64, 64);
         }
     }
 
@@ -125,10 +126,10 @@ public class OverlayRenderer {
                 y += 7;
             }
 
-            context.blit(ENGINE_TEX, x - 9, y - 9, (frame % 5) * 18, Math.floorDiv(frame, 5) * 18, 18, 18, 90, 90);
+            context.blit(RenderPipelines.GUI_TEXTURED, ENGINE_TEX, x - 9, y - 9, (frame % 5) * 18, Math.floorDiv(frame, 5) * 18, 18, 18, 90, 90);
 
-            context.blit(POWER_TEX, x - 9, y - 9, (powerFrame % 5) * 18, Math.floorDiv(powerFrame, 5) * 18, 18, 18, 90, 90);
-            context.blit(POWER_TEX, x - 9, y - 9, (powerFrameTarget % 5) * 18, Math.floorDiv(powerFrameTarget, 5) * 18, 18, 18, 90, 90);
+            context.blit(RenderPipelines.GUI_TEXTURED, POWER_TEX, x - 9, y - 9, (powerFrame % 5) * 18, Math.floorDiv(powerFrame, 5) * 18, 18, 18, 90, 90);
+            context.blit(RenderPipelines.GUI_TEXTURED, POWER_TEX, x - 9, y - 9, (powerFrameTarget % 5) * 18, Math.floorDiv(powerFrameTarget, 5) * 18, 18, 18, 90, 90, ARGB.color(127, 255, 255, 255));
         }
     }
 

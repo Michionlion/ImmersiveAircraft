@@ -12,10 +12,8 @@ import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 public class NeoForgeOverlayRenderer {
     @SubscribeEvent
     public static void registerGuiOverlays(RegisterGuiLayersEvent event) {
-        event.registerAbove(VanillaGuiLayers.FOOD_LEVEL, Main.locate("ia_overlay"),
-                (graphics, delta) -> {
-                    OverlayRenderer.renderOverlay(graphics, delta.getGameTimeDeltaTicks(), 49);
-                    // TODO: Where is forgeGui.rightHeight += 10;?
-                });
+        event.registerAbove(VanillaGuiLayers.CONTEXTUAL_INFO_BAR, Main.locate("ia_overlay"),
+                (graphics, delta) -> OverlayRenderer.renderOverlay(graphics, delta.getGameTimeDeltaTicks(), 49));
+        // TODO: Where is forgeGui.rightHeight += 10;?
     }
 }
