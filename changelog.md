@@ -1,3 +1,8 @@
+# 1.4.4
+
+* Fixed overlay rendering on 1.21.11
+* Fixed vehicle inventory save bug
+
 # 1.4.3
 
 * Updated example datapack
