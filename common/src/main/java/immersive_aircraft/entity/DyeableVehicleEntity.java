@@ -1,6 +1,5 @@
 package immersive_aircraft.entity;
 
-import immersive_aircraft.client.ColorUtils;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -78,7 +77,12 @@ public abstract class DyeableVehicleEntity extends VehicleEntity {
 
     public int getBodyColor() {
         //Gets dye color and separates it into RGB, then turns that into HSB
-        int[] rgb = ColorUtils.hexToRGB(getDyeColor() < 0 ? getDefaultDyeColor() : getDyeColor());
+        int color = getDyeColor() < 0 ? getDefaultDyeColor() : getDyeColor();
+        int[] rgb = new int[]{
+                (color & 0xff0000) >> 16,
+                (color & 0x00ff00) >> 8,
+                color & 0x0000ff
+        };
         float[] hsb = Color.RGBtoHSB(rgb[0], rgb[1], rgb[2], null);
 
         //Clamps Brightness value to prevent color from being too dark
@@ -91,7 +95,12 @@ public abstract class DyeableVehicleEntity extends VehicleEntity {
 
     public int getHighlightColor() {
         //Gets dye color and separates it into RGB, then turns that into HSB
-        int[] rgb = ColorUtils.hexToRGB(getBodyColor());
+        int body = getBodyColor();
+        int[] rgb = new int[]{
+                (body & 0xff0000) >> 16,
+                (body & 0x00ff00) >> 8,
+                body & 0x0000ff
+        };
         float[] hsb = Color.RGBtoHSB(rgb[0], rgb[1], rgb[2], null);
 
         //Multiplies Saturation (hsb[1]) and Brightness (hsb[2]) by a factor

@@ -28,6 +28,7 @@ dependencies {
 
     forgeRuntimeLibrary 'org.mariuszgromada.math:MathParser.org-mXparser:5.2.1'
     include 'org.mariuszgromada.math:MathParser.org-mXparser:5.2.1'
+    runtimeOnly 'org.mariuszgromada.math:MathParser.org-mXparser:5.2.1'
 
     modCompileOnlyApi("mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}")
 
@@ -48,6 +49,7 @@ processResources {
         expand "version": project.version,
                 minecraft_version: rootProject.architectury.minecraft,
                 neoforge_version: rootProject.neoforge_version,
+                neoforge_min_version: rootProject.neoforge_min_version,
                 neoforge_major: neoforgeMajor
     }
 }

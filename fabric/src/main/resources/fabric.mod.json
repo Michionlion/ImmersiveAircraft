@@ -36,11 +36,11 @@
     "immersive_aircraft.mixins.json"
   ],
   "depends": {
-    "fabricloader": ">=0.18.4",
+    "fabricloader": ">=0.17.3",
     "java": ">=21",
     "minecraft": "~1.21.11",
-    "fabric-api": ">=0.141.3+1.21.11",
-    "cloth-config": ">=21.11.151"
+    "fabric-api": ">=0.135.1+1.21.11",
+    "cloth-config": ">=21.11.150"
   },
   "suggests": {
     "modmenu": ">=17.0.0-beta.2",

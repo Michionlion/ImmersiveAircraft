@@ -4,7 +4,6 @@ import com.google.common.collect.Lists;
 import com.mojang.math.Axis;
 import immersive_aircraft.Main;
 import immersive_aircraft.Sounds;
-import immersive_aircraft.client.KeyBindings;
 import immersive_aircraft.cobalt.network.NetworkHandler;
 import immersive_aircraft.config.Config;
 import immersive_aircraft.data.VehicleDataLoader;
@@ -475,8 +474,8 @@ public abstract class VehicleEntity extends Entity {
     private void tickPilot() {
         for (Entity entity : getPassengers()) {
             if (entity instanceof Player player && player.isLocalPlayer()) {
-                if (KeyBindings.down.isDown() && onGround() && getDeltaMovement().length() < 0.01) {
-                    player.displayClientMessage(Component.translatable("mount.onboard", KeyBindings.dismount.getTranslatedKeyMessage()), true);
+                if (Main.keyStateGetter.isDown(Main.KeyState.DOWN) && onGround() && getDeltaMovement().length() < 0.01) {
+                    player.displayClientMessage(Component.translatable("mount.onboard", Main.keyNameGetter.get(Main.Key.DISMOUNT)), true);
                 }
 
                 if (Main.debouncingGetter.is(Main.Key.DISMOUNT)) {
@@ -501,15 +500,15 @@ public abstract class VehicleEntity extends Entity {
         Entity pilot = getPassengers().get(0);
         if (pilot instanceof Player player && player.isLocalPlayer()) {
             setInputs(getMovementMultiplier(
-                            KeyBindings.left.isDown(),
-                            KeyBindings.right.isDown()
+                            Main.keyStateGetter.isDown(Main.KeyState.LEFT),
+                            Main.keyStateGetter.isDown(Main.KeyState.RIGHT)
                     ), getMovementMultiplier(
-                            KeyBindings.up.isDown(),
-                            KeyBindings.down.isDown()
+                            Main.keyStateGetter.isDown(Main.KeyState.UP),
+                            Main.keyStateGetter.isDown(Main.KeyState.DOWN)
                     ),
                     getMovementMultiplier(
-                            useAirplaneControls() ? KeyBindings.push.isDown() : KeyBindings.forward.isDown(),
-                            useAirplaneControls() ? KeyBindings.pull.isDown() : KeyBindings.backward.isDown()
+                            useAirplaneControls() ? Main.keyStateGetter.isDown(Main.KeyState.PUSH) : Main.keyStateGetter.isDown(Main.KeyState.FORWARD),
+                            useAirplaneControls() ? Main.keyStateGetter.isDown(Main.KeyState.PULL) : Main.keyStateGetter.isDown(Main.KeyState.BACKWARD)
                     )
             );
         } else {

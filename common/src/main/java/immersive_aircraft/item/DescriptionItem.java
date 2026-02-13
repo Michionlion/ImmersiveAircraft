@@ -1,6 +1,6 @@
 package immersive_aircraft.item;
 
-import immersive_aircraft.util.FlowingText;
+import immersive_aircraft.Main;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
@@ -19,7 +19,7 @@ public abstract class DescriptionItem extends Item {
     @Override
     public void appendHoverText(ItemStack stack, Item.TooltipContext ctx, TooltipDisplay tooltipDisplay, Consumer<Component> tooltipAdder, TooltipFlag flags) {
         super.appendHoverText(stack, ctx, tooltipDisplay, tooltipAdder, flags);
-        List<Component> wrapped = FlowingText.wrap(Component.translatable(getDescriptionId() + ".description").withStyle(ChatFormatting.ITALIC, ChatFormatting.GRAY), 180);
+        List<Component> wrapped = Main.textWrapper.wrap(Component.translatable(getDescriptionId() + ".description").withStyle(ChatFormatting.ITALIC, ChatFormatting.GRAY), 180);
         wrapped.forEach(tooltipAdder);
     }
 }
